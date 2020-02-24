@@ -1,3 +1,5 @@
-ScimFilterParser/bin
-ScimFilterParser/obj
+ScimFilterParser/bin/*
+ScimFilterParser/obj/*
+ScimFilterParserTests/bin/*
+ScimFilterParserTests/obj/*
 .vs

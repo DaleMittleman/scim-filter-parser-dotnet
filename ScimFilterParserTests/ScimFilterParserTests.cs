@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.RegularExpressions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using ScimFilterParser.Parser;
     using ScimFilterParser.Parser.AbstractSyntaxTree;
@@ -344,6 +345,118 @@
             Assert.AreEqual("test", attributePath.AttributeName);
             Assert.IsNotNull(attributePath.SubAttribute);
             Assert.AreEqual("subTest", attributePath.SubAttribute);
+        }
+        
+        [TestMethod]
+        public void Can_Parse_Disjunction()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test.subTest eq true or userName pr";
+            var expression = parser.Parse(filter) as Expression;
+            
+            Assert.IsTrue(expression is Disjunction);
+
+            var disjunction = expression as Disjunction;
+
+            var leftOperand = disjunction.LeftOperand;
+            var rightOperand = disjunction.RightOperand;
+
+            Assert.IsTrue(leftOperand is Term leftTerm && leftTerm is Factor leftFactor && leftFactor is ComparisonExpression);
+            Assert.IsTrue(rightOperand is Term rightTerm && rightTerm is Factor rightFactor && rightFactor is ComparisonExpression);
+        }
+
+        [TestMethod]
+        public void Can_Parse_Conjunction()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test.subTest eq true and userName pr";
+            var expression = parser.Parse(filter) as Expression;
+            
+            Assert.IsTrue(expression is Term term && term is Conjunction);
+
+            var conjunction = expression as Term as Conjunction;
+
+            var leftOperand = conjunction.LeftOperand;
+            var rightOperand = conjunction.RightOperand;
+
+            Assert.IsTrue(leftOperand is Term leftTerm && leftTerm is Factor leftFactor && leftFactor is ComparisonExpression);
+            Assert.IsTrue(rightOperand is Term rightTerm && rightTerm is Factor rightFactor && rightFactor is ComparisonExpression);
+        }
+
+        [TestMethod]
+        public void Can_Parse_Logical_Expression_Complex()
+        {
+            var parser = new Parser();
+            
+            var filter = $"(test.subTest eq true and userName pr) or otherTest ne 100";
+            var expression = parser.Parse(filter) as Expression;
+            
+            Assert.IsTrue(expression is Disjunction);
+
+            var outerdisjuncTion = expression as Disjunction;
+
+            var leftOperand = outerdisjuncTion.LeftOperand;
+            var rightOperand = outerdisjuncTion.RightOperand;
+
+            Assert.IsTrue(leftOperand is Expression leftExpression && leftExpression is GroupedExpression);
+            Assert.IsTrue(rightOperand is Expression rightExpresion 
+                          && rightExpresion is Term rightTerm 
+                          && rightTerm is Factor rightFactor 
+                          && rightFactor is ComparisonExpression);
+        }
+
+        [TestMethod]
+        public void Can_Parse_Nested_Parens()
+        {
+            var parser = new Parser();
+            
+            var filter = $"((test eq true))";
+            var expression = parser.Parse(filter) as Expression;
+            
+            Assert.IsTrue(expression is GroupedExpression outerGroup && outerGroup is GroupedExpression);
+
+            var nextedExpression = expression as GroupedExpression as GroupedExpression;
+
+            var innerExpression = (nextedExpression.Expression as GroupedExpression).Expression;
+            Assert.IsTrue(innerExpression is Term term && term is Factor factor && factor is ComparisonExpression);
+        }
+
+        [TestMethod]
+        public void Can_Parse_Value_Path()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test[subTest eq 100]";
+            var expression = parser.Parse(filter) as Expression;
+            
+            Assert.IsTrue(expression is Term term && term is Factor factor && factor is ValuePath);
+
+            var valuePath = expression as Term as Factor as ValuePath;
+
+            Assert.AreEqual("test", valuePath.AttributePath.AttributeName);
+            Assert.AreEqual("subTest", (valuePath.ValueFilter as ComparisonExpression).LeftOperand.AttributeName);
+        }
+
+        [TestMethod]
+        public void Can_Parse_Logical_Expression_Within_Value_Path()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test[(subTest eq 100) or otherThing co \"innerText\"]";
+            var expression = parser.Parse(filter) as Expression;
+            
+            Assert.IsTrue(expression is Term term && term is Factor factor && factor is ValuePath);
+
+            var valuePath = expression as Term as Factor as ValuePath;
+
+            Assert.AreEqual("test", valuePath.AttributePath.AttributeName);
+
+            var innerDisjunction = valuePath.ValueFilter as Disjunction;
+
+            Assert.IsTrue((innerDisjunction.LeftOperand as GroupedExpression).Expression is ComparisonExpression);
+            Assert.AreEqual("innerText", (innerDisjunction.RightOperand as ComparisonExpression).RightOperand.Value);
         }
     }
 }
