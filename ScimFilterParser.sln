@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScimFilterParser", "ScimFilterParser\ScimFilterParser.csproj", "{4BD7B282-1365-487C-AEE1-14917DE7B88C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScimFilterParserTests", "ScimFilterParserTests\ScimFilterParserTests.csproj", "{F6B03997-A3D2-413D-BBEB-1E9EE960C3D3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4BD7B282-1365-487C-AEE1-14917DE7B88C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BD7B282-1365-487C-AEE1-14917DE7B88C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BD7B282-1365-487C-AEE1-14917DE7B88C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BD7B282-1365-487C-AEE1-14917DE7B88C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6B03997-A3D2-413D-BBEB-1E9EE960C3D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6B03997-A3D2-413D-BBEB-1E9EE960C3D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6B03997-A3D2-413D-BBEB-1E9EE960C3D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6B03997-A3D2-413D-BBEB-1E9EE960C3D3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AF0B17D7-38D6-476E-811A-D1FA369804EC}
+	EndGlobalSection
+EndGlobal
