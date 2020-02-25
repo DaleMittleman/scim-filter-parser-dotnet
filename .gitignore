@@ -3,3 +3,6 @@ ScimFilterParser/obj/*
 ScimFilterParserTests/bin/*
 ScimFilterParserTests/obj/*
 .vs
+
+*.pdb
+*.dll
