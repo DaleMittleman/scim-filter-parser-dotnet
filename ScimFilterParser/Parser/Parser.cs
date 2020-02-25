@@ -7,6 +7,7 @@
     using System.Text.RegularExpressions;
     using ScimFilterParser.Lexer;
     using ScimFilterParser.Lexer.Config;
+    using ScimFilterParser.Lexer.Error;
     using ScimFilterParser.Parser.AbstractSyntaxTree;
     using ScimFilterParser.Parser.AbstractSyntaxTree.Comparison;
     using ScimFilterParser.Parser.Error;
@@ -17,7 +18,7 @@
 
         public Parser(ParserMode? mode = null, SCIMVersion? version = null)
         {
-            this.lexer = new Lexer(new LexerConfig(new List<KeyValuePair<string, Regex>>()
+            var tokenConfig = new List<KeyValuePair<string, Regex>>()
             {
                 new KeyValuePair<string, Regex>(TokenType.Whitespace, new Regex("^\\s+")),
 
@@ -32,9 +33,19 @@
                 new KeyValuePair<string, Regex>(TokenType.OpenParen, new Regex("^\\(")),
                 new KeyValuePair<string, Regex>(TokenType.CloseParen, new Regex("^\\)")),
                 new KeyValuePair<string, Regex>(TokenType.Name, new Regex("^[a-zA-Z0-9-_]+")),
-                new KeyValuePair<string, Regex>(TokenType.OpenBracket, new Regex("^\\[")),
-                new KeyValuePair<string, Regex>(TokenType.CloseBracket, new Regex("^\\]")),
-            }));
+            };
+
+            // Value path syntax only valid after V1
+            if (version != SCIMVersion.V1)
+            {
+                tokenConfig.AddRange(new List<KeyValuePair<string, Regex>>()
+                {
+                    new KeyValuePair<string, Regex>(TokenType.OpenBracket, new Regex("^\\[")),
+                    new KeyValuePair<string, Regex>(TokenType.CloseBracket, new Regex("^\\]")),
+                });
+            }
+
+            this.lexer = new Lexer(new LexerConfig(tokenConfig));
             
             this.Mode = mode ?? ParserMode.Filter;
             this.Version = version ?? SCIMVersion.V2;
@@ -51,22 +62,24 @@
         
         public Root Parse(string input)
         {
-            this.lexer.Scan(input);
+            try
+            {
+                this.lexer.Scan(input);
+            }
+            catch (Exception ex)
+            {
+                throw new FilterException("Failed to tokenize filter string.", ex);
+            }
 
             Root node;
             if (this.Mode == ParserMode.Filter) 
             {
                 node = this.Expression();
             }
-            else
-            {
-                node = null;
-            }
-            
-            /* else 
+            else 
             {
                 node = this.Path();
-            } */
+            }
 
             this.Match(null);
 
@@ -94,6 +107,47 @@
             }
 
             return leftOperand;
+        }
+
+        private Path Path()
+        {
+            var attributePath = this.AttributePath();
+
+            var token = this.lexer.Token;
+            if (token != null && token.Is(TokenType.OpenBracket))
+            {
+                this.Match(TokenType.OpenBracket);
+
+                var valueFilter = this.Expression();
+
+                this.Match(TokenType.CloseBracket);
+
+                var valuePath = new ValuePath(attributePath, valueFilter);
+
+                token = this.lexer.Token;
+                if (token != null && token.Is(TokenType.DotOperator))
+                {
+                    this.Match(TokenType.DotOperator);
+
+                    string subAttribute = null;
+                    token = this.lexer.Token;
+                    if (token != null && token.Is(TokenType.Name))
+                    {
+                        subAttribute = this.lexer.Token.Value;
+                        this.Match(TokenType.Name);
+                    }
+
+                    return new Path(valuePath, subAttribute);
+                }
+
+                return new Path(valuePath);
+            }
+            else if (token != null)
+            {
+                this.SyntaxError("Path");
+            }
+
+            return new Path(attributePath);
         }
 
         private Term Term()
@@ -130,7 +184,7 @@
             {
                 return this.GroupedExpression();
             }
-            else if (this.IsValuePathIncoming())
+            else if (this.IsValuePathIncoming() && this.Version != SCIMVersion.V1)
             {
                 return this.ValuePath();
             }

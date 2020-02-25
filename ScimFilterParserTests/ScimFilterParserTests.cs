@@ -7,6 +7,7 @@
     using ScimFilterParser.Parser;
     using ScimFilterParser.Parser.AbstractSyntaxTree;
     using ScimFilterParser.Parser.AbstractSyntaxTree.Comparison;
+    using ScimFilterParser.Parser.Error;
 
     [TestClass]
     public class ScimFilterParserTests
@@ -457,6 +458,72 @@
 
             Assert.IsTrue((innerDisjunction.LeftOperand as GroupedExpression).Expression is ComparisonExpression);
             Assert.AreEqual("innerText", (innerDisjunction.RightOperand as ComparisonExpression).RightOperand.Value);
+        }
+
+        [TestMethod]
+        public void Throws_When_Parsing_Invalid_Value_Filter_Value_Path()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test[subtest[user ne null]]";
+
+            Assert.ThrowsException<ValueFilterParsingException>(() => parser.Parse(filter));
+        }
+
+        [TestMethod]
+        public void Throws_When_Parsing_Invalid_Value_Filter_Negated_Value_Path()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test[not (subtest[user ne null])]";
+
+            Assert.ThrowsException<ValueFilterParsingException>(() => parser.Parse(filter));
+        }
+
+        [TestMethod]
+        public void Throws_When_Parsing_Invalid_Value_Filter_Grouped_Value_Path()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test[(subtest[user ne null])]";
+
+            Assert.ThrowsException<ValueFilterParsingException>(() => parser.Parse(filter));
+        }
+
+        [TestMethod]
+        public void Throws_When_Parsing_Invalid_Attribute_Path_Too_Many_SubAttributes()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test.one.two eq 100";
+
+            Assert.ThrowsException<AttributePathParsingException>(() => parser.Parse(filter));
+        }
+        
+        [TestMethod]
+        public void Throws_When_Parsing_Invalid_Attribute_Path()
+        {
+            var parser = new Parser();
+            
+            var filter = $"test##test eq 100";
+
+            Assert.ThrowsException<FilterException>(() => parser.Parse(filter));
+        }
+        
+        [TestMethod]
+        public void Parser_Constructor_Throws_When_Passed_Invalid_Arguments()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new Parser(ParserMode.Path, SCIMVersion.V1));
+        }
+
+        [TestMethod]
+        public void Throws_When_Parsing_Value_Path_With_Version_V1()
+        {
+            var parser = new Parser(null, SCIMVersion.V1);
+            
+            var filter = $"test[user ne null]";
+
+            Assert.ThrowsException<FilterException>(() => parser.Parse(filter));
         }
     }
 }
