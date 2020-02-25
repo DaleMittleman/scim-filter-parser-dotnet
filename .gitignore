@@ -1,8 +1,6 @@
-ScimFilterParser/bin/*
-ScimFilterParser/obj/*
-ScimFilterParserTests/bin/*
-ScimFilterParserTests/obj/*
-.vs
+*/bin/*
+*/obj/*
+.vs/*
 
 *.pdb
 *.dll
